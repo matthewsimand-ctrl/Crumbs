@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { FridgeScanner } from './components/FridgeScanner';
 import { PantryList } from './components/PantryList';
 import { RecipeCard } from './components/RecipeCard';
-import { OnboardingPreferences } from './components/OnboardingPreferences';
-import { Ingredient, Recipe, UserPreferences, UserProgress } from './types';
+import { RecipePlannerBoard } from './components/RecipePlannerBoard';
+import { Ingredient, Recipe } from './types';
 import { analyzeFridgeImage, generateRecipes } from './services/geminiService';
 import { ChefHat, Refrigerator, Sparkles, Loader2, UtensilsCrossed, Trophy, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -29,78 +29,7 @@ export default function App() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pantry' | 'recipes'>('pantry');
-  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
-  const [progress, setProgress] = useState<UserProgress>(defaultProgress);
-
-  useEffect(() => {
-    const storedPreferences = localStorage.getItem(PREFERENCES_STORAGE_KEY);
-    if (storedPreferences) {
-      try {
-        setPreferences(JSON.parse(storedPreferences));
-      } catch (error) {
-        console.error('Failed to load preferences', error);
-      }
-    }
-
-    const storedProgress = localStorage.getItem(PROGRESS_STORAGE_KEY);
-    if (storedProgress) {
-      try {
-        setProgress(JSON.parse(storedProgress));
-      } catch (error) {
-        console.error('Failed to load progress', error);
-      }
-    }
-  }, []);
-
-  const saveProgress = (nextProgress: UserProgress) => {
-    setProgress(nextProgress);
-    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(nextProgress));
-  };
-
-  const awardBadgeIfNeeded = (nextProgress: UserProgress): UserProgress => {
-    const badges = [...nextProgress.badges];
-
-    if (nextProgress.completedSteps >= 5 && !badges.includes('Step Starter')) {
-      badges.push('Step Starter');
-    }
-
-    if (nextProgress.completedRecipes >= 1 && !badges.includes('First Dish')) {
-      badges.push('First Dish');
-    }
-
-    if (nextProgress.completedRecipes >= 5 && !badges.includes('Kitchen Hero')) {
-      badges.push('Kitchen Hero');
-    }
-
-    return {
-      ...nextProgress,
-      badges,
-    };
-  };
-
-  const handleCompleteStep = () => {
-    const next = awardBadgeIfNeeded({
-      ...progress,
-      completedSteps: progress.completedSteps + 1,
-      xp: progress.xp + 10,
-    });
-    saveProgress(next);
-  };
-
-  const handleCompleteRecipe = () => {
-    const next = awardBadgeIfNeeded({
-      ...progress,
-      completedRecipes: progress.completedRecipes + 1,
-      xp: progress.xp + 50,
-    });
-    saveProgress(next);
-  };
-
-  const handleSavePreferences = (nextPreferences: UserPreferences) => {
-    setPreferences(nextPreferences);
-    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(nextPreferences));
-  };
+  const [activeTab, setActiveTab] = useState<'pantry' | 'recipes' | 'planner'>('pantry');
 
   const handleScanComplete = async (base64Image: string) => {
     setScanError(null);
@@ -158,6 +87,14 @@ export default function App() {
               }`}
             >
               Recipes
+            </button>
+            <button
+              onClick={() => setActiveTab('planner')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'planner' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Planner
             </button>
           </nav>
 
@@ -276,14 +213,29 @@ export default function App() {
               >
                 Recipes
               </button>
+              <button
+                onClick={() => setActiveTab('planner')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === 'planner' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                Planner
+              </button>
             </div>
 
             <AnimatePresence mode="wait">
-              {activeTab === 'pantry' ? (
-                <motion.div key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              {activeTab === 'pantry' && (
+                <motion.div
+                  key="pantry"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
                   <PantryList ingredients={ingredients} onUpdate={setIngredients} />
                 </motion.div>
-              ) : (
+              )}
+
+              {activeTab === 'recipes' && (
                 <motion.div
                   key="recipes"
                   initial={{ opacity: 0, x: 20 }}
@@ -294,7 +246,10 @@ export default function App() {
                   <div className="flex items-center justify-between gap-2">
                     <h2 className="text-xl md:text-2xl font-semibold">Suggested Recipes</h2>
                     {recipes.length > 0 && (
-                      <button onClick={handleGenerateRecipes} className="text-sm text-emerald-600 font-medium hover:underline">
+                      <button
+                        onClick={handleGenerateRecipes}
+                        className="text-sm text-emerald-600 font-medium hover:underline"
+                      >
                         Refresh Suggestions
                       </button>
                     )}
@@ -309,15 +264,19 @@ export default function App() {
                       <p className="text-slate-400 text-sm max-w-xs mx-auto">Scan your fridge or add ingredients manually to see recipe suggestions.</p>
                     </div>
                   ) : (
-                    recipes.map((recipe) => (
-                      <RecipeCard
-                        key={recipe.id}
-                        recipe={recipe}
-                        onCompleteStep={handleCompleteStep}
-                        onCompleteRecipe={handleCompleteRecipe}
-                      />
-                    ))
+                    recipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)
                   )}
+                </motion.div>
+              )}
+
+              {activeTab === 'planner' && (
+                <motion.div
+                  key="planner"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                >
+                  <RecipePlannerBoard recipes={recipes} />
                 </motion.div>
               )}
             </AnimatePresence>
