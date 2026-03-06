@@ -7,6 +7,7 @@ import { Ingredient, Recipe } from './types';
 import { analyzeFridgeImage, generateRecipes } from './services/geminiService';
 import { ChefHat, Refrigerator, Sparkles, Loader2, UtensilsCrossed, Trophy, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useGamificationProgress } from './hooks/useGamificationProgress';
 
 const PREFERENCES_STORAGE_KEY = 'fridgevibe.preferences';
 const PROGRESS_STORAGE_KEY = 'fridgevibe.progress';
@@ -29,7 +30,8 @@ export default function App() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pantry' | 'recipes' | 'planner'>('pantry');
+  const [activeTab, setActiveTab] = useState<'pantry' | 'recipes'>('pantry');
+  const { xp, streak, badges, onRecipeCompleted } = useGamificationProgress();
 
   const handleScanComplete = async (base64Image: string) => {
     setScanError(null);
@@ -264,7 +266,14 @@ export default function App() {
                       <p className="text-slate-400 text-sm max-w-xs mx-auto">Scan your fridge or add ingredients manually to see recipe suggestions.</p>
                     </div>
                   ) : (
-                    recipes.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} />)
+                    recipes.map((recipe) => (
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        onRecipeCompleted={onRecipeCompleted}
+                        gamification={{ xp, streak, badges: badges.length }}
+                      />
+                    ))
                   )}
                 </motion.div>
               )}
