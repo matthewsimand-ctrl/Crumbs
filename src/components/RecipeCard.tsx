@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { Recipe, Insight } from '../types';
-<<<<<<< codex/update-handlefinddeals-to-use-uniquedeals
-import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin } from 'lucide-react';
-=======
 import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin, AlertCircle } from 'lucide-react';
->>>>>>> main
 import { motion, AnimatePresence } from 'motion/react';
 import { findLocalDeals } from '../services/geminiService';
 import { searchInstacartDeals, DealItem } from '../services/dealsService';
 
 interface RecipeCardProps {
   recipe: Recipe;
+  onCompleteStep: () => void;
+  onCompleteRecipe: () => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onCompleteStep, onCompleteRecipe }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [deals, setDeals] = useState<Insight[]>([]);
   const [instacartDeals, setInstacartDeals] = useState<DealItem[]>([]);
@@ -45,7 +43,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         }
       });
 
-<<<<<<< codex/update-handlefinddeals-to-use-uniquedeals
       const finalDeals = uniqueDeals
         .sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0))
         .slice(0, 8);
@@ -53,19 +50,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
       setInstacartDeals(finalDeals);
 
       // 2. Get Gemini Insights (Grounding)
-      const dealsText = await findLocalDeals(recipe.missingIngredients, finalDeals);
-=======
-      const topDeals = uniqueDeals.sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0)).slice(0, 8);
-      setInstacartDeals(topDeals);
-
-      try {
-        await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej));
-      } catch {
-        console.warn('Location access denied');
-      }
-
-      const dealsText = await findLocalDeals(recipe.missingIngredients, topDeals);
->>>>>>> main
+      const dealsText = await findLocalDeals(recipe.missingIngredients, uniqueDeals);
       setDeals(dealsText);
 
       if (topDeals.length === 0 && dealsText.length === 0) {
@@ -248,6 +233,20 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
                       </li>
                     ))}
                   </ol>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <button
+                    onClick={onCompleteStep}
+                    className="px-3 py-2 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100"
+                  >
+                    + Complete Step
+                  </button>
+                  <button
+                    onClick={onCompleteRecipe}
+                    className="px-3 py-2 text-xs font-semibold bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100"
+                  >
+                    + Complete Recipe
+                  </button>
+                </div>
                 </div>
               </div>
             </motion.div>
