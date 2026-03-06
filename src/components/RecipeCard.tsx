@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Recipe, Insight } from '../types';
+<<<<<<< codex/update-handlefinddeals-to-use-uniquedeals
+import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin } from 'lucide-react';
+=======
 import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin, AlertCircle } from 'lucide-react';
+>>>>>>> main
 import { motion, AnimatePresence } from 'motion/react';
 import { findLocalDeals } from '../services/geminiService';
 import { searchInstacartDeals, DealItem } from '../services/dealsService';
@@ -41,6 +45,16 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         }
       });
 
+<<<<<<< codex/update-handlefinddeals-to-use-uniquedeals
+      const finalDeals = uniqueDeals
+        .sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0))
+        .slice(0, 8);
+
+      setInstacartDeals(finalDeals);
+
+      // 2. Get Gemini Insights (Grounding)
+      const dealsText = await findLocalDeals(recipe.missingIngredients, finalDeals);
+=======
       const topDeals = uniqueDeals.sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0)).slice(0, 8);
       setInstacartDeals(topDeals);
 
@@ -51,6 +65,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
       }
 
       const dealsText = await findLocalDeals(recipe.missingIngredients, topDeals);
+>>>>>>> main
       setDeals(dealsText);
 
       if (topDeals.length === 0 && dealsText.length === 0) {
