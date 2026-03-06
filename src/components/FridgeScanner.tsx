@@ -37,10 +37,10 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-3xl shadow-sm border border-emerald-100">
+    <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-3xl shadow-sm border border-amber-100">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-semibold text-emerald-900">Scan Your Fridge</h2>
-        <p className="text-emerald-600/70 text-sm">Upload a photo and let AI identify your ingredients</p>
+        <h2 className="text-2xl font-semibold text-amber-900">Scan Your Fridge</h2>
+        <p className="text-amber-700/70 text-sm">Upload a photo and let AI identify your ingredients</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -50,13 +50,13 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             onClick={() => fileInputRef.current?.click()}
-            className="aspect-video border-2 border-dashed border-emerald-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition-colors group"
+            className="aspect-video border-2 border-dashed border-amber-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-amber-50 transition-colors group"
           >
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Camera className="text-emerald-600" size={32} />
+            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Camera className="text-amber-700" size={32} />
             </div>
-            <p className="text-emerald-700 font-medium">Click to upload or take a photo</p>
-            <p className="text-emerald-500 text-xs mt-1">Supports JPG, PNG</p>
+            <p className="text-amber-800 font-medium">Click to upload or take a photo</p>
+            <p className="text-amber-600 text-xs mt-1">Supports JPG, PNG</p>
           </motion.div>
         ) : (
           <motion.div
@@ -89,7 +89,7 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
           animate={{ opacity: 1, y: 0 }}
           onClick={handleScan}
           disabled={isScanning}
-          className="w-full mt-6 py-4 bg-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200"
+          className="w-full mt-6 py-4 bg-amber-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-amber-200"
         >
           {isScanning ? (
             <>
