@@ -35,6 +35,14 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
       };
       reader.readAsDataURL(file);
     }
+
+    setFileError(null);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      setPreview(base64);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleScan = () => {
@@ -149,17 +157,10 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
             <p className="text-emerald-500 text-xs mt-1">Gallery upload fallback for all users</p>
           </motion.div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative aspect-video rounded-2xl overflow-hidden bg-black"
-          >
-            <img src={preview} alt="Fridge Preview" className="w-full h-full object-contain" />
-            <button
-              onClick={clearPreview}
-              className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
-            >
-              <X size={20} />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative aspect-video rounded-[var(--radius-control)] overflow-hidden bg-[#2d1a0b]">
+            <img src={preview} alt="Fridge preview" className="w-full h-full object-contain" />
+            <button onClick={clearPreview} className="absolute top-3 right-3 app-icon-pill bg-black/45 text-white hover:bg-black/70" aria-label="Clear selected image">
+              <X size={18} />
             </button>
           </motion.div>
         )}
@@ -188,7 +189,7 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
           animate={{ opacity: 1, y: 0 }}
           onClick={handleScan}
           disabled={isScanning}
-          className="w-full mt-6 py-4 bg-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200"
+          className="app-button-primary w-full mt-5 md:mt-6 flex items-center justify-center gap-2 disabled:opacity-55 disabled:cursor-not-allowed"
         >
           {isScanning ? (
             <>
