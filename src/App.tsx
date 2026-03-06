@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FridgeScanner } from './components/FridgeScanner';
 import { PantryList } from './components/PantryList';
 import { RecipeCard } from './components/RecipeCard';
@@ -103,6 +103,7 @@ export default function App() {
   };
 
   const handleScanComplete = async (base64Image: string) => {
+    setScanError(null);
     setIsScanning(true);
     try {
       const detectedIngredients = await analyzeFridgeImage(base64Image);
@@ -117,6 +118,7 @@ export default function App() {
 
   const handleGenerateRecipes = async () => {
     if (ingredients.length === 0) return;
+    setRecipeError(null);
     setIsGeneratingRecipes(true);
     try {
       const newRecipes = await generateRecipes(ingredients, preferences);
@@ -134,10 +136,10 @@ export default function App() {
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200">
-              <Refrigerator className="text-white" size={24} />
+            <div className="app-icon-pill shadow-sm">
+              <Refrigerator size={22} />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-emerald-900">FridgeVibe</h1>
+            <h1 className="text-lg md:text-xl font-bold tracking-tight text-[var(--color-text)]">FridgeVibe</h1>
           </div>
 
           <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
@@ -207,9 +209,9 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-slate-500 max-w-2xl mx-auto"
+            className="text-[var(--color-text-muted)] text-base md:text-lg max-w-2xl mx-auto"
           >
-            Snap a photo of your fridge and let AI turn your leftovers into gourmet meals.
+            Scan a fridge or pantry photo to auto-extract ingredients, then turn what you have into great meals.
             Discover recipes, find local deals, and master your kitchen.
           </motion.p>
         </div>
@@ -222,14 +224,14 @@ export default function App() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-6 bg-emerald-900 rounded-3xl text-white shadow-xl shadow-emerald-200"
+                className="app-card bg-[linear-gradient(140deg,#9a4610,#7f3608)] text-white border-0"
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-bold flex items-center gap-2">
                     <ChefHat size={20} />
                     Ready to Cook?
                   </h3>
-                  <span className="text-emerald-300 text-xs font-medium px-2 py-1 bg-white/10 rounded-lg">
+                  <span className="text-orange-100 text-xs font-semibold px-2 py-1 bg-white/15 rounded-lg">
                     {ingredients.length} items found
                   </span>
                 </div>
@@ -239,11 +241,7 @@ export default function App() {
                 <p className="text-emerald-200/70 text-xs mb-6">
                   Cooking level: {preferences.cookingLevel} • Taste: {preferences.tasteProfiles.length > 0 ? preferences.tasteProfiles.join(', ') : 'No preference yet'}
                 </p>
-                <button
-                  onClick={handleGenerateRecipes}
-                  disabled={isGeneratingRecipes}
-                  className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-900/20"
-                >
+                <button onClick={handleGenerateRecipes} disabled={isGeneratingRecipes} className="app-button-primary w-full flex items-center justify-center gap-2">
                   {isGeneratingRecipes ? (
                     <>
                       <Loader2 className="animate-spin" size={20} />
@@ -282,12 +280,7 @@ export default function App() {
 
             <AnimatePresence mode="wait">
               {activeTab === 'pantry' ? (
-                <motion.div
-                  key="pantry"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                >
+                <motion.div key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <PantryList ingredients={ingredients} onUpdate={setIngredients} />
                 </motion.div>
               ) : (
@@ -296,10 +289,10 @@ export default function App() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="space-y-6"
+                  className="space-y-4 md:space-y-6"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-2xl font-semibold text-emerald-900">Suggested Recipes</h2>
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-xl md:text-2xl font-semibold">Suggested Recipes</h2>
                     {recipes.length > 0 && (
                       <button onClick={handleGenerateRecipes} className="text-sm text-emerald-600 font-medium hover:underline">
                         Refresh Suggestions
@@ -334,9 +327,9 @@ export default function App() {
 
       <footer className="mt-24 border-t border-slate-100 py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Refrigerator className="text-emerald-600" size={20} />
-            <span className="font-bold text-emerald-900">FridgeVibe</span>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Refrigerator className="text-[var(--color-primary-strong)]" size={18} />
+            <span className="font-bold">FridgeVibe</span>
           </div>
           <p className="text-slate-400 text-sm">Powered by Gemini AI • Built for Foodies</p>
         </div>
