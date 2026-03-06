@@ -13,8 +13,8 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
   const [activeTab, setActiveTab] = useState<'pantry' | 'recipes'>('pantry');
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [recipeError, setRecipeError] = useState<string | null>(null);
+  const [scanMode, setScanMode] = useState<'manual' | 'camera'>('manual');
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
 
   const handleScanComplete = async (base64Image: string) => {
     setScanError(null);
@@ -91,20 +91,24 @@ export default function App() {
             transition={{ delay: 0.1 }}
             className="text-[var(--color-text-muted)] text-base md:text-lg max-w-2xl mx-auto"
           >
-            Snap your shelf, track what you have, then turn leftovers into weeknight wins 🍽️
+            Scan a fridge or pantry photo to auto-extract ingredients, then turn what you have into great meals.
+            Discover recipes, find local deals, and master your kitchen.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
-          <div className="lg:col-span-5 space-y-5 md:space-y-7">
-            <FridgeScanner onScanComplete={handleScanComplete} isScanning={isScanning} />
-
-            {scanError && (
-              <div className="status-panel flex items-center justify-center gap-2">
-                <AlertTriangle size={16} /> {scanError}
-              </div>
-            )}
-
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Scanner */}
+          <div className="lg:col-span-5 space-y-8">
+            <FridgeScanner
+              onScanComplete={handleScanComplete}
+              isScanning={isScanning}
+              scanMode={scanMode}
+              onScanModeChange={setScanMode}
+              isPremiumUser={isPremiumUser}
+              onUpgradeClick={() => setIsPremiumUser(true)}
+              onEnterIngredientsClick={() => setActiveTab('pantry')}
+            />
+            
             {ingredients.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
