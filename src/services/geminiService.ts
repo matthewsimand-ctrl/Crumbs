@@ -116,7 +116,7 @@ export const findLocalDeals = async (missingIngredients: string[], deals: DealIt
   const dealsContext = deals.map(d => `${d.name} at ${d.retailer}: $${d.price}${d.isSale ? ' (SALE)' : ''}`).join("\n");
   
   const prompt = `
-    You are the "Smart Kitchen Assistant" for FridgeVibe.
+    You are the "Smart Kitchen Assistant" for Crumbs.
     Your goal is to help the user save money and reduce food waste.
     
     The user is missing these ingredients: ${missingIngredients.join(", ")}.

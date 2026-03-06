@@ -216,23 +216,22 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
   const activeTimer = stepTimers[currentStep];
 
   return (
-    <motion.div layout className="app-card overflow-hidden hover:shadow-[var(--shadow-card-hover)] transition-shadow">
-      <div>
-        <div className="flex justify-between items-start mb-3 md:mb-4 gap-2">
+    <motion.div
+      layout
+      className="bg-white rounded-3xl overflow-hidden shadow-sm border border-amber-100 hover:shadow-md transition-shadow"
+    >
+      <div className="p-6">
+        <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-bold text-emerald-900">{recipe.title}</h3>
-            <p className="text-emerald-600/70 text-sm line-clamp-2 mt-1">{recipe.description}</p>
+            <h3 className="text-xl font-bold text-amber-900">{recipe.title}</h3>
+            <p className="text-amber-700/70 text-sm line-clamp-2 mt-1">{recipe.description}</p>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                recipe.difficulty === 'Easy'
-                  ? 'bg-green-100 text-green-700'
-                  : recipe.difficulty === 'Medium'
-                    ? 'bg-yellow-100 text-yellow-700'
-                    : 'bg-red-100 text-red-700'
-              }`}
-            >
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              recipe.difficulty === 'Easy' ? 'bg-amber-100 text-amber-800' :
+              recipe.difficulty === 'Medium' ? 'bg-orange-100 text-orange-700' :
+              'bg-red-100 text-red-700'
+            }`}>
               {recipe.difficulty}
             </span>
           </div>
@@ -249,8 +248,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
           </span>
         </div>
 
-        <div className="flex items-center gap-4 text-[var(--color-text-muted)] text-sm mb-5">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-4 text-amber-800/60 text-sm mb-6">
+          <div className="flex items-center gap-1">
             <Clock size={16} />
             {recipe.prepTime}
           </div>
@@ -445,11 +444,8 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
                           <p className="text-xs font-bold text-[var(--color-text)] truncate">{deal.name}</p>
                           <p className="text-[11px] text-[var(--color-text-muted)]">{deal.retailer}</p>
                         </div>
-                        <div className={`text-xs font-bold ${deal.isSale ? 'text-emerald-600' : 'text-emerald-900'}`}>
-                          ${deal.price.toFixed(2)}{' '}
-                          {deal.isSale && (
-                            <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1 rounded">SALE</span>
-                          )}
+                        <div className={`text-xs font-bold ${deal.isSale ? 'text-amber-700' : 'text-amber-900'}`}>
+                          ${deal.price.toFixed(2)} {deal.isSale && <span className="text-[9px] bg-amber-100 text-amber-800 px-1 rounded">SALE</span>}
                         </div>
                       </div>
                     ))}
@@ -480,6 +476,17 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
           </div>
         )}
 
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full py-2 flex items-center justify-center gap-2 text-amber-700 font-semibold hover:bg-amber-50 rounded-xl transition-colors"
+        >
+          {isExpanded ? (
+            <>Hide Recipe <ChevronUp size={20} /></>
+          ) : (
+            <>View Recipe <ChevronDown size={20} /></>
+          )}
+        </button>
+
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -490,22 +497,22 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
             >
               <div className="pt-2 space-y-6">
                 <div>
-                  <h4 className="font-bold text-[var(--color-text)] mb-2.5">Ingredients</h4>
+                  <h4 className="font-bold text-amber-900 mb-3">Ingredients</h4>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {recipe.ingredients.map((ing, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-                        <div className="w-1.5 h-1.5 bg-[var(--color-primary)] rounded-full" />
+                      <li key={i} className="flex items-center gap-2 text-sm text-amber-800">
+                        <div className="w-1.5 h-1.5 bg-amber-400 rounded-full" />
                         {ing}
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-bold text-[var(--color-text)] mb-2.5">Instructions</h4>
+                  <h4 className="font-bold text-amber-900 mb-3">Instructions</h4>
                   <ol className="space-y-4">
                     {recipe.instructions.map((step, i) => (
-                      <li key={i} className="flex gap-3 text-sm text-[var(--color-text-muted)]">
-                        <span className="flex-shrink-0 w-6 h-6 bg-[var(--color-primary-soft)] text-[var(--color-primary-strong)] rounded-full flex items-center justify-center font-bold text-xs">
+                      <li key={i} className="flex gap-4 text-sm text-amber-800">
+                        <span className="flex-shrink-0 w-6 h-6 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold text-xs">
                           {i + 1}
                         </span>
                         {step}
