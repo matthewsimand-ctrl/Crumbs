@@ -6,6 +6,7 @@ import { Ingredient, Recipe } from './types';
 import { analyzeFridgeImage, generateRecipes } from './services/geminiService';
 import { ChefHat, Refrigerator, Sparkles, Loader2, UtensilsCrossed } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useGamificationProgress } from './hooks/useGamificationProgress';
 
 export default function App() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -13,6 +14,7 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
   const [activeTab, setActiveTab] = useState<'pantry' | 'recipes'>('pantry');
+  const { xp, streak, badges, onRecipeCompleted } = useGamificationProgress();
 
   const handleScanComplete = async (base64Image: string) => {
     setIsScanning(true);
@@ -209,7 +211,12 @@ export default function App() {
                     </div>
                   ) : (
                     recipes.map((recipe) => (
-                      <RecipeCard key={recipe.id} recipe={recipe} />
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        onRecipeCompleted={onRecipeCompleted}
+                        gamification={{ xp, streak, badges: badges.length }}
+                      />
                     ))
                   )}
                 </motion.div>
