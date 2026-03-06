@@ -5,9 +5,112 @@
   --font-sans: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+:root {
+  --color-bg: #fff9f4;
+  --color-surface: #ffffff;
+  --color-surface-soft: #fff2e6;
+  --color-border: #ffd5b1;
+  --color-text: #3f220d;
+  --color-text-muted: #8f5530;
+  --color-primary: #f17c30;
+  --color-primary-strong: #c85f18;
+  --color-primary-soft: #ffe6d2;
+  --color-success: #2e7d4f;
+
+  --space-card: clamp(1rem, 2vw, 1.5rem);
+  --space-stack: clamp(0.8rem, 1.6vw, 1.2rem);
+  --radius-card: 1.125rem;
+  --radius-control: 0.9rem;
+  --shadow-card: 0 10px 24px rgba(122, 57, 12, 0.08);
+  --shadow-card-hover: 0 14px 30px rgba(122, 57, 12, 0.14);
+  --shadow-button: 0 10px 20px rgba(241, 124, 48, 0.26);
+}
+
 @layer base {
   body {
     @apply antialiased;
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+  }
+
+  button,
+  [role='button'],
+  input {
+    @apply transition-all;
+  }
+
+  @media (max-width: 640px) {
+    body {
+      line-height: 1.7;
+    }
+  }
+}
+
+@layer components {
+  .app-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-card);
+  }
+
+  .app-button-primary {
+    min-height: 3rem;
+    border-radius: var(--radius-control);
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: var(--shadow-button);
+  }
+
+  .app-button-primary:hover {
+    background: var(--color-primary-strong);
+  }
+
+  .app-button-secondary {
+    min-height: 3rem;
+    border-radius: var(--radius-control);
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+    border: 1px solid var(--color-border);
+    font-weight: 600;
+  }
+
+  .app-icon-pill {
+    @apply inline-flex items-center justify-center rounded-xl;
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary-strong);
+  }
+
+  .status-panel {
+    border-radius: var(--radius-control);
+    border: 1px dashed var(--color-border);
+    background: var(--color-surface-soft);
+    color: var(--color-text-muted);
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 640px) {
+    .app-card {
+      padding: 1rem;
+    }
+
+    .app-button-primary,
+    .app-button-secondary {
+      min-height: 3.25rem;
+      font-size: 0.96rem;
+    }
+
+    .status-panel {
+      padding: 0.9rem;
+      font-size: 0.95rem;
+    }
   }
 }
 
@@ -19,6 +122,10 @@
     @apply bg-transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+    background: #f7c49f;
+    border-radius: 999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #eea874;
   }
 }
