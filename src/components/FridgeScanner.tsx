@@ -1,15 +1,29 @@
 import React, { useRef, useState } from 'react';
-import { Camera, Upload, Loader2, X } from 'lucide-react';
+import { Camera, Upload, Loader2, X, Crown, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface FridgeScannerProps {
   onScanComplete: (base64Image: string) => void;
   isScanning: boolean;
+  scanMode: 'manual' | 'camera';
+  onScanModeChange: (mode: 'manual' | 'camera') => void;
+  isPremiumUser: boolean;
+  onUpgradeClick: () => void;
+  onEnterIngredientsClick: () => void;
 }
 
-export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, isScanning }) => {
+export const FridgeScanner: React.FC<FridgeScannerProps> = ({
+  onScanComplete,
+  isScanning,
+  scanMode,
+  onScanModeChange,
+  isPremiumUser,
+  onUpgradeClick,
+  onEnterIngredientsClick,
+}) => {
   const [preview, setPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -18,7 +32,6 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
       reader.onloadend = () => {
         const base64 = reader.result as string;
         setPreview(base64);
-        // We don't auto-complete here, let user confirm or just use the preview
       };
       reader.readAsDataURL(file);
     }
@@ -33,15 +46,92 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
 
   const clearPreview = () => {
     setPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
   return (
     <div className="w-full max-w-2xl mx-auto p-6 bg-white rounded-3xl shadow-sm border border-emerald-100">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-semibold text-emerald-900">Scan Your Fridge</h2>
-        <p className="text-emerald-600/70 text-sm">Upload a photo and let AI identify your ingredients</p>
+        <h2 className="text-2xl font-semibold text-emerald-900">Fridge Ingredient Scanner</h2>
+        <p className="text-emerald-600/70 text-sm">
+          Take a fridge or pantry photo and we&apos;ll auto-extract your ingredients in seconds.
+        </p>
       </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        <button
+          onClick={() => onScanModeChange('manual')}
+          className={`p-3 rounded-xl border text-left transition-all ${
+            scanMode === 'manual'
+              ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+              : 'border-slate-200 text-slate-500 hover:border-emerald-200'
+          }`}
+        >
+          <p className="font-semibold">Enter ingredients</p>
+          <p className="text-xs mt-0.5">Type items manually in your pantry list.</p>
+        </button>
+
+        <button
+          onClick={() => onScanModeChange('camera')}
+          className={`p-3 rounded-xl border text-left transition-all ${
+            scanMode === 'camera'
+              ? 'border-emerald-500 bg-emerald-50 text-emerald-900'
+              : 'border-slate-200 text-slate-500 hover:border-emerald-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <p className="font-semibold">Scan with camera</p>
+            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              <Crown size={12} />
+              Premium
+            </span>
+          </div>
+          <p className="text-xs mt-0.5">Launch your phone camera to snap fridge photos.</p>
+        </button>
+      </div>
+
+      {scanMode === 'manual' && (
+        <div className="mb-5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          <p className="text-sm text-slate-600 mb-3">
+            Prefer typing? Add ingredients directly to your pantry list, then generate recipes instantly.
+          </p>
+          <button
+            onClick={onEnterIngredientsClick}
+            className="w-full sm:w-auto px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+          >
+            Open ingredient list
+          </button>
+        </div>
+      )}
+
+      {scanMode === 'camera' && !isPremiumUser && (
+        <div className="mb-5 p-4 rounded-2xl border border-amber-200 bg-amber-50">
+          <p className="text-sm text-amber-800 flex items-center gap-2 font-medium">
+            <Lock size={16} />
+            Camera scan is available on Premium.
+          </p>
+          <p className="text-xs text-amber-700 mt-1 mb-3">
+            Upgrade to open your camera directly and scan fridge/pantry photos with one tap.
+          </p>
+          <button
+            onClick={onUpgradeClick}
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+          >
+            Upgrade to Premium
+          </button>
+        </div>
+      )}
+
+      {scanMode === 'camera' && isPremiumUser && !preview && (
+        <button
+          onClick={() => cameraInputRef.current?.click()}
+          className="w-full mb-4 py-3 bg-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700 transition-colors"
+        >
+          <Camera size={18} />
+          Open Camera (Premium)
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {!preview ? (
@@ -49,14 +139,14 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => galleryInputRef.current?.click()}
             className="aspect-video border-2 border-dashed border-emerald-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition-colors group"
           >
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Camera className="text-emerald-600" size={32} />
+              <Upload className="text-emerald-600" size={30} />
             </div>
-            <p className="text-emerald-700 font-medium">Click to upload or take a photo</p>
-            <p className="text-emerald-500 text-xs mt-1">Supports JPG, PNG</p>
+            <p className="text-emerald-700 font-medium">Upload fridge or pantry photo</p>
+            <p className="text-emerald-500 text-xs mt-1">Gallery upload fallback for all users</p>
           </motion.div>
         ) : (
           <motion.div
@@ -77,7 +167,16 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
 
       <input
         type="file"
-        ref={fileInputRef}
+        ref={cameraInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+      />
+
+      <input
+        type="file"
+        ref={galleryInputRef}
         onChange={handleFileChange}
         accept="image/*"
         className="hidden"
@@ -94,12 +193,12 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({ onScanComplete, is
           {isScanning ? (
             <>
               <Loader2 className="animate-spin" size={20} />
-              Analyzing Ingredients...
+              Extracting ingredients...
             </>
           ) : (
             <>
               <Upload size={20} />
-              Analyze Fridge
+              Extract Ingredients
             </>
           )}
         </motion.button>

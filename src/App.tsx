@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FridgeScanner } from './components/FridgeScanner';
 import { PantryList } from './components/PantryList';
 import { RecipeCard } from './components/RecipeCard';
@@ -13,6 +13,8 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
   const [activeTab, setActiveTab] = useState<'pantry' | 'recipes'>('pantry');
+  const [scanMode, setScanMode] = useState<'manual' | 'camera'>('manual');
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
 
   const handleScanComplete = async (base64Image: string) => {
     setIsScanning(true);
@@ -96,7 +98,7 @@ export default function App() {
             transition={{ delay: 0.1 }}
             className="text-slate-500 max-w-2xl mx-auto"
           >
-            Snap a photo of your fridge and let AI turn your leftovers into gourmet meals.
+            Scan a fridge or pantry photo to auto-extract ingredients, then turn what you have into great meals.
             Discover recipes, find local deals, and master your kitchen.
           </motion.p>
         </div>
@@ -104,7 +106,15 @@ export default function App() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Scanner */}
           <div className="lg:col-span-5 space-y-8">
-            <FridgeScanner onScanComplete={handleScanComplete} isScanning={isScanning} />
+            <FridgeScanner
+              onScanComplete={handleScanComplete}
+              isScanning={isScanning}
+              scanMode={scanMode}
+              onScanModeChange={setScanMode}
+              isPremiumUser={isPremiumUser}
+              onUpgradeClick={() => setIsPremiumUser(true)}
+              onEnterIngredientsClick={() => setActiveTab('pantry')}
+            />
             
             {ingredients.length > 0 && (
               <motion.div
