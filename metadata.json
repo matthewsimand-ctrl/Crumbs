@@ -1,0 +1,8 @@
+{
+  "name": "FridgeVibe",
+  "description": "A smart kitchen assistant that identifies fridge ingredients from photos and generates recipes with local shopping deals.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
