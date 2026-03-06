@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Ingredient, Recipe } from "../types";
+import { Ingredient, Recipe, UserPreferences } from "../types";
 import { DealItem } from "./dealsService";
 import { Insight } from "../types";
 
@@ -54,13 +54,18 @@ export const analyzeFridgeImage = async (base64Image: string): Promise<Ingredien
   }
 };
 
-export const generateRecipes = async (ingredients: Ingredient[]): Promise<Recipe[]> => {
+export const generateRecipes = async (ingredients: Ingredient[], preferences?: UserPreferences): Promise<Recipe[]> => {
   const model = "gemini-3-flash-preview";
   const ingredientNames = ingredients.map(i => i.name).join(", ");
+  const preferenceContext = preferences
+    ? `The user has cooking level "${preferences.cookingLevel}" and taste preferences: ${preferences.tasteProfiles.length > 0 ? preferences.tasteProfiles.join(", ") : "No specific taste preferences selected"}.`
+    : 'No user preference context was provided.';
   
   const response = await ai.models.generateContent({
     model,
     contents: `Generate 3 creative recipes based on these ingredients: ${ingredientNames}. 
+    ${preferenceContext}
+    Match recipe complexity to the cooking level and flavor direction to the taste profile when possible.
     Include some recipes that might need 1-2 extra common ingredients (list those as missing).
     Return a JSON array of recipe objects.`,
     config: {
