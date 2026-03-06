@@ -27,3 +27,27 @@ export interface Insight {
   title: string;
   description: string;
 }
+
+export type CookingLevel = 'Beginner' | 'Intermediate' | 'Advanced';
+
+export type TasteProfile = 'Comfort Food' | 'Healthy' | 'Spicy' | 'Global Flavors' | 'Quick Meals' | 'Vegetarian';
+
+export interface UserProgress {
+  xp: number;
+  badges: string[];
+  completedRecipes: number;
+  completedSteps: number;
+}
+
+export interface ScheduledRecipe {
+  id: string;
+  recipeId: string;
+  recipeTitle: string;
+  scheduledFor: string;
+}
+
+export interface UserPreferences {
+  cookingLevel: CookingLevel;
+  tasteProfiles: TasteProfile[];
+  onboardingCompleted: boolean;
+}
