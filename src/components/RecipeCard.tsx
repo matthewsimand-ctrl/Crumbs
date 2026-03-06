@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Recipe, Ingredient, Insight } from '../types';
+import { Recipe, Insight } from '../types';
 import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { findLocalDeals } from '../services/geminiService';
@@ -7,9 +7,11 @@ import { searchInstacartDeals, DealItem } from '../services/dealsService';
 
 interface RecipeCardProps {
   recipe: Recipe;
+  onCompleteStep: () => void;
+  onCompleteRecipe: () => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onCompleteStep, onCompleteRecipe }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [deals, setDeals] = useState<Insight[]>([]);
   const [instacartDeals, setInstacartDeals] = useState<DealItem[]>([]);
@@ -44,17 +46,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
       setInstacartDeals(uniqueDeals.sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0)).slice(0, 8));
 
       // 2. Get Gemini Insights (Grounding)
-      let location = undefined;
-      try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) => 
-          navigator.geolocation.getCurrentPosition(res, rej)
-        );
-        location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      } catch (e) {
-        console.warn("Location access denied");
-      }
-      
-      const dealsText = await findLocalDeals(recipe.missingIngredients, instacartDeals);
+      const dealsText = await findLocalDeals(recipe.missingIngredients, uniqueDeals);
       setDeals(dealsText);
     } catch (e) {
       setDeals([]);
@@ -231,6 +223,20 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
                       </li>
                     ))}
                   </ol>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <button
+                    onClick={onCompleteStep}
+                    className="px-3 py-2 text-xs font-semibold bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 hover:bg-emerald-100"
+                  >
+                    + Complete Step
+                  </button>
+                  <button
+                    onClick={onCompleteRecipe}
+                    className="px-3 py-2 text-xs font-semibold bg-orange-50 text-orange-700 rounded-lg border border-orange-200 hover:bg-orange-100"
+                  >
+                    + Complete Recipe
+                  </button>
+                </div>
                 </div>
               </div>
             </motion.div>
