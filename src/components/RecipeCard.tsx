@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Recipe, Ingredient, Insight } from '../types';
+import { Recipe, Insight } from '../types';
 import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { findLocalDeals } from '../services/geminiService';
@@ -41,20 +41,14 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         }
       });
 
-      setInstacartDeals(uniqueDeals.sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0)).slice(0, 8));
+      const finalDeals = uniqueDeals
+        .sort((a, b) => (b.isSale ? 1 : 0) - (a.isSale ? 1 : 0))
+        .slice(0, 8);
+
+      setInstacartDeals(finalDeals);
 
       // 2. Get Gemini Insights (Grounding)
-      let location = undefined;
-      try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) => 
-          navigator.geolocation.getCurrentPosition(res, rej)
-        );
-        location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      } catch (e) {
-        console.warn("Location access denied");
-      }
-      
-      const dealsText = await findLocalDeals(recipe.missingIngredients, instacartDeals);
+      const dealsText = await findLocalDeals(recipe.missingIngredients, finalDeals);
       setDeals(dealsText);
     } catch (e) {
       setDeals([]);
