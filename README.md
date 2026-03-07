@@ -12,9 +12,26 @@ View your app in AI Studio: https://ai.studio/apps/5eba0ca8-675e-453b-bd20-cabea
 
 **Prerequisites:**  Node.js
 
-
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Deploy to GitHub Pages from terminal
+
+You can deploy from your terminal to the `gh-pages` branch with:
+
+```bash
+npm run deploy
+```
+
+This command:
+- Builds with base path `/Crumbs/`
+- Force-pushes the generated `dist/` output to the `gh-pages` branch
+
+Optional environment variables:
+
+```bash
+GH_PAGES_BASE_PATH=/your-repo/ GH_PAGES_BRANCH=gh-pages npm run deploy
+```
