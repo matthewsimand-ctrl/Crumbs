@@ -5,7 +5,7 @@ import { Insight } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
-export const analyzeFridgeImage = async (base64Image: string): Promise<Ingredient[]> => {
+export const analyzeFridgeImage = async (base64Image: string, mimeType = 'image/jpeg'): Promise<Ingredient[]> => {
   const model = "gemini-3-flash-preview";
   
   const response = await ai.models.generateContent({
@@ -15,7 +15,7 @@ export const analyzeFridgeImage = async (base64Image: string): Promise<Ingredien
         parts: [
           {
             inlineData: {
-              mimeType: "image/jpeg",
+              mimeType,
               data: base64Image,
             },
           },

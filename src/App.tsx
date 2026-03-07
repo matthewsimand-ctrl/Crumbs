@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FridgeScanner } from './components/FridgeScanner';
 import { PantryList } from './components/PantryList';
 import { RecipeCard } from './components/RecipeCard';
@@ -41,6 +41,8 @@ export default function App() {
   const [accountName, setAccountName] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const pantryPanelRef = useRef<HTMLDivElement>(null);
   const { xp, streak, badges, onRecipeCompleted } = useGamificationProgress();
 
   useEffect(() => {
@@ -125,18 +127,74 @@ export default function App() {
     setAccountError(null);
   };
 
-  const handleScanComplete = async (base64Image: string) => {
+  const handleScanComplete = async (images: { data: string; mimeType: string }[]) => {
+    if (images.length === 0) {
+      setScanError('Please select at least one image to scan.');
+      return;
+    }
+
+    setScanError(null);
     setIsScanning(true);
+
     try {
-      const detectedIngredients = await analyzeFridgeImage(base64Image);
-      setIngredients(detectedIngredients);
+      const detections = await Promise.all(images.map((image) => analyzeFridgeImage(image.data, image.mimeType)));
+      const mergedIngredients = detections
+        .flat()
+        .reduce<Ingredient[]>((acc, current) => {
+          const existing = acc.find((item) => item.name.toLowerCase() === current.name.toLowerCase());
+          if (existing) {
+            existing.quantity = existing.quantity === current.quantity ? existing.quantity : `${existing.quantity} + ${current.quantity}`;
+            return acc;
+          }
+
+          acc.push(current);
+          return acc;
+        }, []);
+
+      setIngredients(mergedIngredients);
       setActiveTab('pantry');
+      pantryPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       console.error('Scanning failed', error);
+      setScanError('Ingredient extraction failed. Please try again with a clearer image.');
     } finally {
       setIsScanning(false);
     }
   };
+
+  const handleOpenIngredientList = () => {
+    setActiveTab('pantry');
+    pantryPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  if (!account) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF8] flex items-center justify-center px-4">
+        <form onSubmit={handleCreateAccount} className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <CrumbsLogo />
+          <h1 className="text-2xl font-bold text-slate-900">Sign in to Crumbs</h1>
+          <p className="text-sm text-slate-500">Create your local account to continue.</p>
+          <input
+            value={accountName}
+            onChange={(event) => setAccountName(event.target.value)}
+            placeholder="Full name"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          />
+          <input
+            type="email"
+            value={accountEmail}
+            onChange={(event) => setAccountEmail(event.target.value)}
+            placeholder="Email address"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          />
+          {accountError && <p className="text-sm text-red-500">{accountError}</p>}
+          <button type="submit" className="app-button-primary w-full">
+            Sign in
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   const handleGenerateRecipes = async () => {
     if (ingredients.length === 0) return;
@@ -203,37 +261,13 @@ export default function App() {
 
         <section className="grid lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5 space-y-6">
-            {!account ? (
-              <form onSubmit={handleCreateAccount} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
-                <h2 className="text-xl font-bold text-slate-900">Create your account</h2>
-                <p className="text-sm text-slate-500">Set up your profile to unlock onboarding and save personalized recipe context.</p>
-                <input
-                  value={accountName}
-                  onChange={(event) => setAccountName(event.target.value)}
-                  placeholder="Full name"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                />
-                <input
-                  type="email"
-                  value={accountEmail}
-                  onChange={(event) => setAccountEmail(event.target.value)}
-                  placeholder="Email address"
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                />
-                {accountError && <p className="text-sm text-red-500">{accountError}</p>}
-                <button type="submit" className="app-button-primary w-full">
-                  Create account
-                </button>
-              </form>
-            ) : (
-              <div className="bg-white rounded-3xl border border-emerald-100 p-6 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-slate-400">Account</p>
-                <h2 className="text-xl font-bold text-emerald-800 mt-1">Welcome back, {account.fullName.split(' ')[0]}!</h2>
-                <p className="text-sm text-slate-500 mt-1">{account.email}</p>
-              </div>
-            )}
+            <div className="bg-white rounded-3xl border border-emerald-100 p-6 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Account</p>
+              <h2 className="text-xl font-bold text-emerald-800 mt-1">Welcome back, {account.fullName.split(' ')[0]}!</h2>
+              <p className="text-sm text-slate-500 mt-1">{account.email}</p>
+            </div>
 
-            {account && !preferences.onboardingCompleted && (
+            {!preferences.onboardingCompleted && (
               <OnboardingPreferences initialPreferences={preferences} onSave={handleSavePreferences} />
             )}
 
@@ -244,8 +278,10 @@ export default function App() {
               onScanModeChange={setScanMode}
               isPremiumUser={isPremiumUser}
               onUpgradeClick={() => setIsPremiumUser(true)}
-              onEnterIngredientsClick={() => setActiveTab('pantry')}
+              onEnterIngredientsClick={handleOpenIngredientList}
             />
+
+            {scanError && <p className="text-sm text-red-500">{scanError}</p>}
 
             {ingredients.length > 0 && (
               <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-6 bg-amber-900 rounded-3xl text-white shadow-xl shadow-amber-200">
@@ -304,7 +340,7 @@ export default function App() {
 
             <AnimatePresence mode="wait">
               {activeTab === 'pantry' && (
-                <motion.div key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <motion.div ref={pantryPanelRef} key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <PantryList ingredients={ingredients} onUpdate={setIngredients} />
                 </motion.div>
               )}
