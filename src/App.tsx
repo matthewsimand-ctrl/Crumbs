@@ -5,16 +5,17 @@ import { RecipeCard } from './components/RecipeCard';
 import { CrumbsLogo } from './components/CrumbsLogo';
 import { OnboardingPreferences } from './components/OnboardingPreferences';
 import { RecipePlannerBoard } from './components/RecipePlannerBoard';
+import { GroceryShoppingList } from './components/GroceryShoppingList';
 import { Ingredient, Recipe, UserPreferences } from './types';
 import { analyzeFridgeImage, generateRecipes } from './services/geminiService';
-import { ChefHat, Loader2, Sparkles, UtensilsCrossed, UserPlus, ScanLine, CheckCircle2, Crown } from 'lucide-react';
+import { ChefHat, Loader2, Sparkles, UtensilsCrossed, UserPlus, ScanLine, CheckCircle2, Crown, AlertCircle, ShoppingBasket, CalendarDays } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGamificationProgress } from './hooks/useGamificationProgress';
 
 const PREFERENCES_STORAGE_KEY = 'fridgevibe.preferences';
 const ACCOUNT_STORAGE_KEY = 'fridgevibe.account';
 
-type AppTab = 'pantry' | 'recipes' | 'planner';
+type AppTab = 'pantry' | 'recipes' | 'planner' | 'grocery';
 
 interface LocalAccount {
   fullName: string;
@@ -27,6 +28,13 @@ const defaultPreferences: UserPreferences = {
   tasteProfiles: [],
   onboardingCompleted: false,
 };
+
+const tabs: Array<{ key: AppTab; label: string; icon: typeof ChefHat }> = [
+  { key: 'pantry', label: 'Ingredients', icon: ScanLine },
+  { key: 'recipes', label: 'Recipes', icon: UtensilsCrossed },
+  { key: 'planner', label: 'Planning', icon: CalendarDays },
+  { key: 'grocery', label: 'Grocery', icon: ShoppingBasket },
+];
 
 export default function App() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -41,6 +49,7 @@ export default function App() {
   const [accountName, setAccountName] = useState('');
   const [accountEmail, setAccountEmail] = useState('');
   const [accountError, setAccountError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const { xp, streak, badges, onRecipeCompleted } = useGamificationProgress();
 
   useEffect(() => {
@@ -84,14 +93,14 @@ export default function App() {
         icon: CheckCircle2,
       },
       {
-        title: 'Scan ingredients',
-        detail: ingredients.length > 0 ? `${ingredients.length} ingredients in pantry` : 'Upload or capture your fridge to start recipe generation.',
+        title: 'Track ingredients',
+        detail: ingredients.length > 0 ? `${ingredients.length} ingredients in pantry` : 'Add items from scanning or manual entry.',
         done: ingredients.length > 0,
         icon: ScanLine,
       },
       {
-        title: 'Cook and track progress',
-        detail: recipes.length > 0 ? `${recipes.length} recipe ideas ready` : 'Generate recipes and build streaks from completed meals.',
+        title: 'Generate and plan meals',
+        detail: recipes.length > 0 ? `${recipes.length} recipe ideas ready` : 'Generate recipes, then schedule and shop from dedicated tabs.',
         done: recipes.length > 0,
         icon: ChefHat,
       },
@@ -127,26 +136,31 @@ export default function App() {
 
   const handleScanComplete = async (base64Image: string) => {
     setIsScanning(true);
+    setActionError(null);
     try {
       const detectedIngredients = await analyzeFridgeImage(base64Image);
       setIngredients(detectedIngredients);
       setActiveTab('pantry');
     } catch (error) {
       console.error('Scanning failed', error);
+      setActionError(error instanceof Error ? error.message : 'Scanning failed unexpectedly.');
     } finally {
       setIsScanning(false);
     }
   };
 
   const handleGenerateRecipes = async () => {
-    if (ingredients.length === 0) return;
+    if (ingredients.length === 0 || isGeneratingRecipes) return;
+
     setIsGeneratingRecipes(true);
+    setActionError(null);
     try {
       const newRecipes = await generateRecipes(ingredients, preferences);
       setRecipes(newRecipes);
       setActiveTab('recipes');
     } catch (error) {
       console.error('Recipe generation failed', error);
+      setActionError(error instanceof Error ? error.message : 'Could not generate recipes. Please try again.');
     } finally {
       setIsGeneratingRecipes(false);
     }
@@ -159,13 +173,13 @@ export default function App() {
           <CrumbsLogo />
 
           <nav className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-            {(['pantry', 'recipes', 'planner'] as AppTab[]).map((tab) => (
+            {tabs.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.key ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab.label}
               </button>
             ))}
           </nav>
@@ -186,7 +200,7 @@ export default function App() {
             A cleaner cooking flow from signup to dinner.
           </motion.h1>
           <p className="text-slate-600 max-w-3xl">
-            Build your account, define your preferences, scan what you already have, and generate a plan in one dashboard. Each panel below mirrors that journey so the experience feels predictable and fast.
+            Ingredients, recipes, planning, and shopping now live in dedicated tabs so each part of your workflow stays focused.
           </p>
           <div className="grid gap-3 md:grid-cols-4 mt-6">
             {setupSteps.map((step) => (
@@ -201,8 +215,8 @@ export default function App() {
           </div>
         </section>
 
-        <section className="grid lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-5 space-y-6">
+        <section className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+          <div className="xl:col-span-4 space-y-6">
             {!account ? (
               <form onSubmit={handleCreateAccount} className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
                 <h2 className="text-xl font-bold text-slate-900">Create your account</h2>
@@ -233,92 +247,79 @@ export default function App() {
               </div>
             )}
 
-            {account && !preferences.onboardingCompleted && (
-              <OnboardingPreferences initialPreferences={preferences} onSave={handleSavePreferences} />
-            )}
+            {account && !preferences.onboardingCompleted && <OnboardingPreferences initialPreferences={preferences} onSave={handleSavePreferences} />}
 
-            <FridgeScanner
-              onScanComplete={handleScanComplete}
-              isScanning={isScanning}
-              scanMode={scanMode}
-              onScanModeChange={setScanMode}
-              isPremiumUser={isPremiumUser}
-              onUpgradeClick={() => setIsPremiumUser(true)}
-              onEnterIngredientsClick={() => setActiveTab('pantry')}
-            />
-
-            {ingredients.length > 0 && (
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-6 bg-amber-900 rounded-3xl text-white shadow-xl shadow-amber-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold flex items-center gap-2">
-                    <ChefHat size={20} />
-                    Ready to cook?
-                  </h3>
-                  <span className="text-amber-200 text-xs font-medium px-2 py-1 bg-white/10 rounded-lg">{ingredients.length} items found</span>
-                </div>
-                <p className="text-amber-100/80 text-sm mb-6">Generate recipe ideas based on pantry inventory and your selected taste preferences.</p>
-                <button onClick={handleGenerateRecipes} disabled={isGeneratingRecipes} className="app-button-primary w-full flex items-center justify-center gap-2">
-                  {isGeneratingRecipes ? (
-                    <>
-                      <Loader2 className="animate-spin" size={20} />
-                      Crafting recipes...
-                    </>
-                  ) : (
-                    <>
-                      <UtensilsCrossed size={20} />
-                      Generate recipes
-                    </>
-                  )}
-                </button>
-              </motion.div>
-            )}
-          </div>
-
-          <div className="lg:col-span-7 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="bg-white border border-emerald-100 rounded-2xl p-4">
+            <div className="bg-white border border-emerald-100 rounded-2xl p-4 grid grid-cols-3 gap-3">
+              <div>
                 <p className="text-xs uppercase tracking-wide text-slate-400">Progress XP</p>
                 <p className="text-2xl font-bold text-emerald-700">{xp}</p>
               </div>
-              <div className="bg-white border border-emerald-100 rounded-2xl p-4">
+              <div>
                 <p className="text-xs uppercase tracking-wide text-slate-400">Streak</p>
                 <p className="text-2xl font-bold text-emerald-700">{streak}</p>
               </div>
-              <div className="bg-white border border-emerald-100 rounded-2xl p-4">
+              <div>
                 <p className="text-xs uppercase tracking-wide text-slate-400">Badges</p>
                 <p className="text-2xl font-bold text-emerald-700">{badges.length}</p>
               </div>
             </div>
 
+            {actionError && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700 flex items-start gap-2">
+                <AlertCircle size={16} className="mt-0.5" />
+                <span>{actionError}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="xl:col-span-8 space-y-6">
             <div className="flex md:hidden bg-slate-100 p-1 rounded-xl">
-              {(['pantry', 'recipes', 'planner'] as AppTab[]).map((tab) => (
+              {tabs.map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === tab ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500'}`}
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium ${activeTab === tab.key ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500'}`}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab.label}
                 </button>
               ))}
             </div>
 
             <AnimatePresence mode="wait">
               {activeTab === 'pantry' && (
-                <motion.div key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <motion.div key="pantry" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                  <section className="bg-gradient-to-r from-orange-50 to-amber-50 border border-amber-100 rounded-3xl p-5">
+                    <h2 className="text-2xl font-semibold text-amber-900">Ingredient Tracker</h2>
+                    <p className="text-sm text-slate-600 mt-1">Use scanning and manual edits to keep an accurate pantry list.</p>
+                  </section>
+                  <FridgeScanner
+                    onScanComplete={handleScanComplete}
+                    isScanning={isScanning}
+                    scanMode={scanMode}
+                    onScanModeChange={setScanMode}
+                    isPremiumUser={isPremiumUser}
+                    onUpgradeClick={() => setIsPremiumUser(true)}
+                    onEnterIngredientsClick={() => setActiveTab('pantry')}
+                  />
                   <PantryList ingredients={ingredients} onUpdate={setIngredients} />
                 </motion.div>
               )}
 
               {activeTab === 'recipes' && (
                 <motion.div key="recipes" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4 md:space-y-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-2xl font-semibold text-amber-900">Suggested recipes</h2>
-                    {recipes.length > 0 && (
-                      <button onClick={handleGenerateRecipes} className="text-sm text-amber-700 font-medium hover:underline">
-                        Refresh suggestions
+                  <section className="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-100 rounded-3xl p-5">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div>
+                        <h2 className="text-2xl font-semibold text-amber-900">Recipes</h2>
+                        <p className="text-sm text-slate-600 mt-1">Generate ideas from your tracked ingredients.</p>
+                      </div>
+                      <button onClick={handleGenerateRecipes} disabled={isGeneratingRecipes || ingredients.length === 0} className="app-button-primary flex items-center gap-2 disabled:opacity-50">
+                        {isGeneratingRecipes ? <Loader2 className="animate-spin" size={18} /> : <UtensilsCrossed size={18} />}
+                        {isGeneratingRecipes ? 'Crafting recipes...' : recipes.length > 0 ? 'Refresh suggestions' : 'Generate recipes'}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                    {ingredients.length === 0 && <p className="text-xs text-amber-700 mt-3">Add ingredients in the Ingredients tab to unlock recipe generation.</p>}
+                  </section>
 
                   {recipes.length === 0 ? (
                     <div className="bg-white rounded-3xl p-12 text-center border border-amber-100">
@@ -326,7 +327,7 @@ export default function App() {
                         <UtensilsCrossed className="text-amber-300" size={32} />
                       </div>
                       <h3 className="text-amber-900 font-semibold mb-2">No recipes yet</h3>
-                      <p className="text-slate-400 text-sm max-w-xs mx-auto">Scan your fridge or add ingredients manually to see recipe suggestions.</p>
+                      <p className="text-slate-400 text-sm max-w-xs mx-auto">Generate recipes from the ingredients you track in the Ingredients tab.</p>
                     </div>
                   ) : (
                     recipes.map((recipe) => (
@@ -337,8 +338,22 @@ export default function App() {
               )}
 
               {activeTab === 'planner' && (
-                <motion.div key="planner" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <motion.div key="planner" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                  <section className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-5">
+                    <h2 className="text-2xl font-semibold text-emerald-900">Meal Planning</h2>
+                    <p className="text-sm text-slate-600 mt-1">Plan the week by dragging recipe cards into your schedule.</p>
+                  </section>
                   <RecipePlannerBoard recipes={recipes} />
+                </motion.div>
+              )}
+
+              {activeTab === 'grocery' && (
+                <motion.div key="grocery" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                  <section className="bg-gradient-to-r from-cyan-50 to-sky-50 border border-cyan-100 rounded-3xl p-5">
+                    <h2 className="text-2xl font-semibold text-cyan-900">Grocery Shopping</h2>
+                    <p className="text-sm text-slate-600 mt-1">Shop smarter with one combined list from all missing recipe ingredients.</p>
+                  </section>
+                  <GroceryShoppingList recipes={recipes} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -353,7 +368,7 @@ export default function App() {
           </div>
           <p className="text-slate-400 text-sm">Powered by Gemini AI • Built for foodies</p>
           <p className="text-slate-400 text-xs mt-1 inline-flex items-center gap-1">
-            <Sparkles size={12} /> Dashboard redesigned for a step-by-step kitchen workflow.
+            <Sparkles size={12} /> Dedicated tabs for ingredients, recipes, planning, and shopping.
           </p>
         </div>
       </footer>

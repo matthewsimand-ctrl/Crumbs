@@ -3,9 +3,14 @@ import { Ingredient, Recipe, UserPreferences } from "../types";
 import { DealItem } from "./dealsService";
 import { Insight } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const env = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {};
+const geminiApiKey = (env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || "").trim();
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 export const analyzeFridgeImage = async (base64Image: string): Promise<Ingredient[]> => {
+  if (!geminiApiKey) {
+    throw new Error('Missing Gemini API key. Set GEMINI_API_KEY or VITE_GEMINI_API_KEY in your environment.');
+  }
   const model = "gemini-3-flash-preview";
   
   const response = await ai.models.generateContent({
@@ -55,6 +60,9 @@ export const analyzeFridgeImage = async (base64Image: string): Promise<Ingredien
 };
 
 export const generateRecipes = async (ingredients: Ingredient[], preferences?: UserPreferences): Promise<Recipe[]> => {
+  if (!geminiApiKey) {
+    throw new Error('Missing Gemini API key. Set GEMINI_API_KEY or VITE_GEMINI_API_KEY in your environment.');
+  }
   const model = "gemini-3-flash-preview";
   const ingredientNames = ingredients.map(i => i.name).join(", ");
   const preferenceContext = preferences
