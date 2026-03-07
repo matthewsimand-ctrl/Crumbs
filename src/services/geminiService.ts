@@ -20,7 +20,7 @@ export const analyzeFridgeImage = async (base64Image: string): Promise<Ingredien
         parts: [
           {
             inlineData: {
-              mimeType: "image/jpeg",
+              mimeType,
               data: base64Image,
             },
           },

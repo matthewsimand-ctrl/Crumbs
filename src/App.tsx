@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FridgeScanner } from './components/FridgeScanner';
 import { PantryList } from './components/PantryList';
 import { RecipeCard } from './components/RecipeCard';
@@ -134,13 +134,33 @@ export default function App() {
     setAccountError(null);
   };
 
-  const handleScanComplete = async (base64Image: string) => {
+  const handleScanComplete = async (images: { data: string; mimeType: string }[]) => {
+    if (images.length === 0) {
+      setScanError('Please select at least one image to scan.');
+      return;
+    }
+
+    setScanError(null);
     setIsScanning(true);
     setActionError(null);
     try {
-      const detectedIngredients = await analyzeFridgeImage(base64Image);
-      setIngredients(detectedIngredients);
+      const detections = await Promise.all(images.map((image) => analyzeFridgeImage(image.data, image.mimeType)));
+      const mergedIngredients = detections
+        .flat()
+        .reduce<Ingredient[]>((acc, current) => {
+          const existing = acc.find((item) => item.name.toLowerCase() === current.name.toLowerCase());
+          if (existing) {
+            existing.quantity = existing.quantity === current.quantity ? existing.quantity : `${existing.quantity} + ${current.quantity}`;
+            return acc;
+          }
+
+          acc.push(current);
+          return acc;
+        }, []);
+
+      setIngredients(mergedIngredients);
       setActiveTab('pantry');
+      pantryPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (error) {
       console.error('Scanning failed', error);
       setActionError(error instanceof Error ? error.message : 'Scanning failed unexpectedly.');
@@ -148,6 +168,40 @@ export default function App() {
       setIsScanning(false);
     }
   };
+
+  const handleOpenIngredientList = () => {
+    setActiveTab('pantry');
+    pantryPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  if (!account) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF8] flex items-center justify-center px-4">
+        <form onSubmit={handleCreateAccount} className="w-full max-w-md bg-white rounded-3xl border border-slate-200 p-6 shadow-sm space-y-4">
+          <CrumbsLogo />
+          <h1 className="text-2xl font-bold text-slate-900">Sign in to Crumbs</h1>
+          <p className="text-sm text-slate-500">Create your local account to continue.</p>
+          <input
+            value={accountName}
+            onChange={(event) => setAccountName(event.target.value)}
+            placeholder="Full name"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          />
+          <input
+            type="email"
+            value={accountEmail}
+            onChange={(event) => setAccountEmail(event.target.value)}
+            placeholder="Email address"
+            className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          />
+          {accountError && <p className="text-sm text-red-500">{accountError}</p>}
+          <button type="submit" className="app-button-primary w-full">
+            Sign in
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   const handleGenerateRecipes = async () => {
     if (ingredients.length === 0 || isGeneratingRecipes) return;

@@ -3,7 +3,7 @@ import { Camera, Upload, Loader2, X, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface FridgeScannerProps {
-  onScanComplete: (base64Image: string) => void;
+  onScanComplete: (images: { data: string; mimeType: string }[]) => void;
   isScanning: boolean;
   scanMode: 'manual' | 'camera';
   onScanModeChange: (mode: 'manual' | 'camera') => void;
@@ -21,26 +21,44 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
   onUpgradeClick,
   onEnterIngredientsClick,
 }) => {
-  const [preview, setPreview] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<{ dataUrl: string; data: string; mimeType: string }[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
       setFileError('No image selected.');
       return;
     }
 
-    setFileError(null);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64 = reader.result as string;
-      setPreview(base64);
-    };
-    reader.onerror = () => setFileError('Could not read this image. Please try another file.');
-    reader.readAsDataURL(file);
+    const fileReaders = Array.from(files).map(
+      (file) =>
+        new Promise<{ dataUrl: string; data: string; mimeType: string }>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            const [, data = ''] = dataUrl.split(',');
+            resolve({
+              dataUrl,
+              data,
+              mimeType: file.type || 'image/jpeg',
+            });
+          };
+          reader.onerror = () => reject(new Error('Could not read this image. Please try another file.'));
+          reader.readAsDataURL(file);
+        })
+    );
+
+    Promise.all(fileReaders)
+      .then((images) => {
+        setSelectedImages(images);
+        setFileError(null);
+      })
+      .catch((error) => {
+        setFileError(error instanceof Error ? error.message : 'Could not read this image. Please try another file.');
+      });
   };
 
   const openInputByMode = () => {
@@ -53,13 +71,12 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
   };
 
   const handleScan = () => {
-    if (!preview) return;
-    const base64Data = preview.split(',')[1];
-    onScanComplete(base64Data);
+    if (selectedImages.length === 0) return;
+    onScanComplete(selectedImages.map((image) => ({ data: image.data, mimeType: image.mimeType })));
   };
 
   const clearPreview = () => {
-    setPreview(null);
+    setSelectedImages([]);
     setFileError(null);
     if (galleryInputRef.current) galleryInputRef.current.value = '';
     if (cameraInputRef.current) cameraInputRef.current.value = '';
@@ -115,7 +132,7 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
         </div>
       )}
 
-      {scanMode === 'camera' && isPremiumUser && !preview && (
+      {scanMode === 'camera' && isPremiumUser && selectedImages.length === 0 && (
         <button
           onClick={() => cameraInputRef.current?.click()}
           className="w-full mb-4 py-3 bg-emerald-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-emerald-700"
@@ -126,7 +143,7 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
       )}
 
       <AnimatePresence mode="wait">
-        {!preview ? (
+        {selectedImages.length === 0 ? (
           <motion.button
             type="button"
             initial={{ opacity: 0, y: 10 }}
@@ -138,15 +155,24 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
             <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Camera className="text-amber-700" size={32} />
             </div>
-            <p className="text-amber-800 font-medium">Tap to upload or take a photo</p>
-            <p className="text-amber-600 text-xs mt-1">Supports JPG, PNG, HEIC</p>
+            <p className="text-amber-800 font-medium">Tap to upload or take photos</p>
+            <p className="text-amber-600 text-xs mt-1">Supports JPG, PNG, HEIC • multi-select enabled</p>
           </motion.button>
         ) : (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative aspect-video rounded-[var(--radius-control)] overflow-hidden bg-[#2d1a0b]">
-            <img src={preview} alt="Fridge preview" className="w-full h-full object-contain" />
-            <button onClick={clearPreview} className="absolute top-3 right-3 app-icon-pill bg-black/45 text-white hover:bg-black/70" aria-label="Clear selected image">
-              <X size={18} />
-            </button>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {selectedImages.map((image, index) => (
+                <div key={index} className="relative aspect-video rounded-[var(--radius-control)] overflow-hidden bg-[#2d1a0b]">
+                  <img src={image.dataUrl} alt={`Fridge preview ${index + 1}`} className="w-full h-full object-contain" />
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-slate-500">{selectedImages.length} image{selectedImages.length > 1 ? 's' : ''} selected</p>
+              <button onClick={clearPreview} className="app-icon-pill bg-black/45 text-white hover:bg-black/70" aria-label="Clear selected images">
+                <X size={18} />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -159,6 +185,7 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
         onChange={handleFileChange}
         accept="image/*"
         capture="environment"
+        multiple
         className="hidden"
       />
 
@@ -167,10 +194,11 @@ export const FridgeScanner: React.FC<FridgeScannerProps> = ({
         ref={galleryInputRef}
         onChange={handleFileChange}
         accept="image/*"
+        multiple
         className="hidden"
       />
 
-      {preview && (
+      {selectedImages.length > 0 && (
         <motion.button
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
