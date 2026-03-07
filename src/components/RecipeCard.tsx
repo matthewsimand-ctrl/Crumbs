@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Recipe, Insight } from '../types';
-import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin, Play, Pause, RotateCcw, CheckCircle2, ChevronLeft, ChevronRight, Flame, Trophy, Star } from 'lucide-react';
+import { Clock, ChefHat, ChevronDown, ChevronUp, ShoppingCart, Loader2, MapPin, Play, Pause, RotateCcw, CheckCircle2, ChevronLeft, ChevronRight, Flame, Trophy, Star, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { findLocalDeals } from '../services/geminiService';
 import { searchInstacartDeals, DealItem } from '../services/dealsService';
@@ -176,6 +176,15 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
     setCurrentStep((step) => Math.max(step - 1, 0));
   };
 
+  const onCompleteStep = () => {
+    toggleStepCompletion(currentStep);
+    goToNextStep();
+  };
+
+  const onCompleteRecipe = () => {
+    setCompletedSteps(recipe.instructions.map(() => true));
+  };
+
   const startTimer = (index: number) => {
     setStepTimers((timers) =>
       timers.map((timer, timerIndex) => {
@@ -225,15 +234,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onRecipeComplete
           <div>
             <h3 className="text-xl font-bold text-amber-900">{recipe.title}</h3>
             <p className="text-amber-700/70 text-sm line-clamp-2 mt-1">{recipe.description}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              recipe.difficulty === 'Easy' ? 'bg-amber-100 text-amber-800' :
-              recipe.difficulty === 'Medium' ? 'bg-orange-100 text-orange-700' :
-              'bg-red-100 text-red-700'
-            }`}>
-              {recipe.difficulty}
-            </span>
           </div>
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
