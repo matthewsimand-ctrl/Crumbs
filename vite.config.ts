@@ -5,7 +5,11 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
+  const isProductionBuild = mode === 'production';
+  const githubPagesBasePath = env.GH_PAGES_BASE_PATH || '/Crumbs/';
+
   return {
+    base: isProductionBuild ? githubPagesBasePath : '/',
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
